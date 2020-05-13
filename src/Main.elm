@@ -36,12 +36,14 @@ type alias States =
   { name : Name
   , key : Key
   , value: Value
-  , output : String  
+  , tablename1 : String
+  , tablename2 : String
+  , output : String
   }
 
 
 init : Model
-init = (States "" "" "" "", [("test", ["k1", "k2", "k3"], ["h1", "h2", "h3"]), ("test2", ["2k1", "2k2", "2k3", "2k4"], ["2h1", "2h2", "2h3", "2h4"]), ("test3", ["k1", "k2"], ["h1", "h2"])])
+init = (States "" "" "" "" "" "", [("test", ["k1", "k2", "k3"], ["h1", "h2", "h3"]), ("test2", ["2k1", "2k2", "2k3", "2k4"], ["2h1", "2h2", "2h3", "2h4"]), ("test3", ["k1", "k2", "k3"], ["h1", "h2", "h3"])])
 
 
 type Msg
@@ -49,6 +51,8 @@ type Msg
   = Name String
   | Key String
   | Value String
+  | TableName1 String
+  | TableName2 String
       -- Tlacidla
   | Empty
   | Show
@@ -59,6 +63,7 @@ type Msg
   | ValFunc
   | Card
   | Dom
+  | Equal
 
 
 update : Msg -> Model -> Model
@@ -73,40 +78,46 @@ update msg (st, li) =
     Value text ->
       ({ st | value = text, output = "" }, li)
 
+    TableName1 text ->
+      ({ st | tablename1 = text, output = "" }, li)
+
+    TableName2 text ->
+      ({ st | tablename2 = text, output = "" }, li)
+
     Empty ->
       if st.name == "" 
-      then (States "" "" "" "Treba vlozit meno novej tabulky", li)
-      else (States "" "" "" ("Vytvorena nova tabulka: " ++ st.name), empty st.name li)
+      then (States "" "" "" "" "" "Treba vlozit meno novej tabulky", li)
+      else (States "" "" "" "" "" ("Vytvorena nova tabulka: " ++ st.name), empty st.name li)
 
     Show ->
-        (States "" "" "" (if st.name == "" 
+        (States "" "" "" "" "" (if st.name == "" 
                           then "Treba vlozit meno tabulky" 
                           else if member st.name (getFirsts li)
                           then "Hodnoty tabulky " ++ st.name ++ " su: " ++ show st.name li
                           else "Neznama tabulka "  ++ st.name), li)
 
     ShowRep ->
-        (States "" "" "" (if st.name == "" 
+        (States "" "" "" "" "" (if st.name == "" 
                           then "Treba vlozit meno tabulky" 
                           else if member st.name (getFirsts li)
                           then "Hodnoty tabulky " ++ st.name ++ " reprezentovane strukturov: " ++ showRep st.name li
                           else "Neznama tabulka "  ++ st.name), li)
 
     Insert -> 
-        (States "" "" "" (if st.name == "" || st.key == ""
+        (States "" "" "" "" "" (if st.name == "" || st.key == ""
                           then "Pre vkladanie do tabulky treba vlozit meno tabulky a kluc"
                           else if member st.name (getFirsts li)
                           then "Pridana hodnota " ++ st.key ++ ":" ++ st.value ++ " do tabulky " ++ st.name
                           else "Neznama tabulka" ++ st.name), insert st.name st.key st.value li)
 
     Remove -> 
-        (States "" "" "" (if st.name == "" || st.key == ""
+        (States "" "" "" "" "" (if st.name == "" || st.key == ""
                           then "Pre odstranenie z tabulky treba vlozit meno tabulky a kluc"
                           else if member st.name (getFirsts li) && member st.key (getkeys (gettable st.name li))
                           then "Odstranena hodnota " ++ st.key ++ ":" ++ (myValue st.name st.key li) ++ " z tabulky " ++ st.name
                           else "Neznama tabulka alebo neplatny kluc" ++ st.name ++ "-" ++ st.key), remove st.name st.key li)
     IsIn ->
-        (States "" "" "" (if st.name == "" || st.key == ""
+        (States "" "" "" "" "" (if st.name == "" || st.key == ""
                           then "Pre zistenie ci sa kluc nachadza v tabulke treba vlozit meno tabulky a kluc"
                           else if not (member st.name (getFirsts li))
                           then "Neznama tabulka"
@@ -115,25 +126,34 @@ update msg (st, li) =
                           else "Kluc " ++ st.key ++ " sa nenachadza v tabulke " ++ st.name), li)
     
     ValFunc -> 
-        (States "" "" "" (if st.name == "" || st.key == ""
+        (States "" "" "" "" "" (if st.name == "" || st.key == ""
                           then "Pre zistenie hodnoty treba vlozit meno tabulky a kluc"
                           else if member st.name (getFirsts li) && member st.key (getkeys (gettable st.name li))
                           then "Hodnota kluca " ++ st.key ++ " v tabulke " ++ st.name ++ " je " ++ myValue st.name st.key li
                           else "Neznama tabulka alebo neplatny kluc" ++ st.name ++ "-" ++ st.key), li)
 
     Card ->
-        (States "" "" "" (if st.name == "" 
+        (States "" "" "" "" "" (if st.name == "" 
                           then "Treba vlozit meno tabulky" 
                           else if member st.name (getFirsts li)
                           then "Kardinalita tabulky " ++ st.name ++ ": " ++ String.fromInt (card st.name li)
                           else "Neznama tabulka "  ++ st.name), li)
 
     Dom ->
-        (States "" "" "" (if st.name == "" 
+        (States "" "" "" "" "" (if st.name == "" 
                           then "Treba vlozit meno tabulky" 
                           else if member st.name (getFirsts li)
                           then "Kluce tabulky " ++ st.name ++ ": " ++ listToString identity (dom st.name li)
                           else "Neznama tabulka "  ++ st.name), li)
+
+    Equal ->
+        (States "" "" "" "" "" (if st.tablename1 == "" || st.tablename2 == ""
+                          then "Treba vlozit mena oboch tabuliek" 
+                          else if member st.tablename1 (getFirsts li) && member st.tablename2 (getFirsts li)
+                          then if equal (gettable st.tablename1 li) (gettable st.tablename2 li)
+                          then "Tabulky " ++ st.tablename1 ++ " a " ++ st.tablename2 ++ " su rovnake"
+                          else "Tabulky " ++ st.tablename1 ++ " a " ++ st.tablename2 ++ " nie su rovnake"
+                          else "Neznama jedna z tabuliek "  ++ st.tablename1 ++ "/" ++ st.tablename2), li)
                           
 
 view : Model -> Html Msg
@@ -148,16 +168,28 @@ view (st, li) =
     , viewInput "text" "Hodnota" st.value Value
     , br [][]
     , br [][]
+    , div [][text "Manazment tabuliek:"]
     , button [ onClick Empty ] [ text "empty" ]
     , button [ onClick Insert ] [ text "insert" ]
     , button [ onClick Remove ] [ text "remove" ]
     , br [][]
+    , br [][]
+    , div [][text "Vypisujuce funckie:"]
     , button [ onClick Show ] [ text "show"]
     , button [ onClick ShowRep ] [ text "showRep"]
     , button [ onClick IsIn ] [ text "isIn"]
     , button [ onClick ValFunc ] [ text "value"]
     , button [ onClick Card ] [ text "card"]
     , button [ onClick Dom ] [ text "dom"]
+    , br [][]
+    , br [][]
+    , div [][text "Test rovnosti tabuliek:"]
+    , viewInput "text" "Meno prvej tabulky" st.tablename1 TableName1
+    , br [][]
+    , viewInput "text" "Meno druhej tabulky" st.tablename2 TableName2
+    , br [][]
+    , br [][]
+    , button [ onClick Equal ] [ text "equal?"]
     , br [][]
     , br [][]
     , div [][text "Definovane Tabulky: "]
