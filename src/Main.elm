@@ -43,7 +43,7 @@ type alias States =
 
 
 init : Model
-init = (States "" "" "" "" "" "", [("test", ["k1", "k2", "k3"], ["h1", "h2", "h3"]), ("test2", ["2k1", "2k2", "2k3", "2k4"], ["2h1", "2h2", "2h3", "2h4"]), ("test3", ["k1", "k2", "k3"], ["h1", "h2", "h3"])])
+init = (States "" "" "" "" "" "", [("test", ["k1", "k2", "k3"], ["h1", "h2", "h3"]), ("test2", ["2k1", "2k2", "2k3", "2k4"], ["2h1", "2h2", "2h3", "2h4"]), ("test3", ["k3", "k2", "k1"], ["h3", "h2", "h1"])])
 
 
 type Msg
@@ -406,7 +406,7 @@ eqlist l1 l2 =
 
 equal : Table -> Table -> Bool
 equal table1 table2 =
-    if eqlist (getkeys table1) (getkeys table2) && eqlist (getvalues table1) (getvalues table2)
+    if eqlist (zip (getkeys table1) (getvalues table1)) (zip (getkeys table2) (getvalues table2))
     then True
     else False
 
@@ -430,4 +430,14 @@ listToString fun list =
           ++ lts f rest
   in
     "[" ++ (lts fun list) ++ "]"
+
+zip : List a -> List b -> List (a, b)
+zip l m = 
+  case l of
+    [] -> []
+    first_l :: rest_l -> 
+      case m of
+        [] -> []
+        first_m :: rest_m ->
+          (first_l, first_m) :: zip rest_l rest_m
     
